@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open When…</title>
+
+<!--
+  ════════════════════════════════════════════════════════════════
+   "OPEN WHEN…"  —  a little drawer of comfort
+  ════════════════════════════════════════════════════════════════
+
+   HOW TO MAKE THIS YOURS  (everything personal lives in the DRAWERS
+   array further down, around line ~430). For each drawer you can edit:
+
+     • heading   →  the title of the letter
+     • lines[]   →  each line/paragraph of your message
+     • voice     →  path to a voice note, e.g. "voice/sad.mp3"  ('' = hidden)
+     • photo     →  path to a photo, e.g. "photos/us.jpg"       ('' = hidden)
+
+   To add YOUR OWN piano instead of the built-in ambient music,
+   drop an mp3 next to this file and set MUSIC_FILE below (line ~415).
+  ════════════════════════════════════════════════════════════════
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --night-1:#0c0908;
+    --night-2:#15100b;
+    --glow:#3a2a16;
+    --lamp:#ffca7a;
+    --wood-1:#7a5232;
+    --wood-2:#5a3a22;
+    --wood-3:#3f2818;
+    --wood-edge:#2a1a0f;
+    --brass-1:#e6c984;
+    --brass-2:#b8923f;
+    --brass-dark:#5a4418;
+    --paper:#f3e7cf;
+    --paper-2:#ead9b8;
+    --ink:#4b3826;
+    --ink-soft:#6f573d;
+    --rose:#d98a96;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html,body{height:100%;}
+
+  body{
+    background:
+      radial-gradient(120% 90% at 50% 8%, var(--glow) 0%, rgba(58,42,22,0.25) 28%, rgba(0,0,0,0) 60%),
+      radial-gradient(140% 120% at 50% 120%, #1b130c 0%, var(--night-1) 70%);
+    background-color:var(--night-1);
+    color:var(--paper);
+    font-family:'Cormorant Garamond',Georgia,serif;
+    min-height:100%;
+    overflow-x:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+  }
+
+  /* warm lamp orb up top */
+  .lamp{
+    position:fixed; top:-90px; left:50%; transform:translateX(-50%);
+    width:340px; height:340px; pointer-events:none; z-index:0;
+    background:radial-gradient(circle at 50% 50%, rgba(255,200,120,0.55), rgba(255,180,90,0.12) 40%, rgba(0,0,0,0) 70%);
+    filter:blur(2px);
+    animation:flicker 6s ease-in-out infinite;
+  }
+  @keyframes flicker{
+    0%,100%{opacity:.95;}
+    45%{opacity:.86;}
+    55%{opacity:1;}
+    70%{opacity:.9;}
+  }
+
+  /* drifting dust motes in the light */
+  .motes{position:fixed; inset:0; pointer-events:none; z-index:1; overflow:hidden;}
+  .mote{
+    position:absolute; bottom:-10px; width:3px; height:3px; border-radius:50%;
+    background:rgba(255,220,160,0.7); box-shadow:0 0 6px rgba(255,210,150,0.6);
+    animation:rise linear infinite;
+  }
+  @keyframes rise{
+    0%{transform:translateY(0) translateX(0); opacity:0;}
+    10%{opacity:.8;}
+    90%{opacity:.5;}
+    100%{transform:translateY(-105vh) translateX(40px); opacity:0;}
+  }
+
+  header{
+    z-index:2; text-align:center; margin-top:54px; padding:0 20px;
+    animation:fadeDown 1.4s ease both;
+  }
+  .for-who{
+    font-family:'Caveat',cursive; font-size:1.5rem; color:var(--lamp);
+    opacity:.85; letter-spacing:.5px;
+  }
+  h1{
+    font-weight:500; font-size:clamp(2.4rem,7vw,4rem); letter-spacing:.04em;
+    color:#f6e6c6; text-shadow:0 2px 30px rgba(255,180,90,0.35);
+    margin:.1em 0 .15em;
+  }
+  .sub{
+    font-style:italic; font-size:1.1rem; color:#c9b08a; opacity:.8;
+  }
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-18px);}to{opacity:1;transform:none;}}
+
+  /* ── the cabinet ── */
+  .cabinet-wrap{
+    z-index:2; margin:46px 0 90px; perspective:1400px;
+    animation:fadeUp 1.6s .3s ease both;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(26px);}to{opacity:1;transform:none;}}
+
+  .cabinet{
+    width:min(440px,90vw);
+    border-radius:14px;
+    padding:18px 16px 22px;
+    background:
+      linear-gradient(180deg, var(--wood-1), var(--wood-2) 50%, var(--wood-3));
+    box-shadow:
+      0 2px 0 rgba(255,210,150,0.15) inset,
+      0 -30px 60px -20px rgba(0,0,0,0.6) inset,
+      0 40px 80px -20px rgba(0,0,0,0.75),
+      0 0 0 2px rgba(0,0,0,0.4);
+    position:relative;
+    transform:rotateX(6deg);
+  }
+  .cabinet::before{ /* wood grain */
+    content:''; position:absolute; inset:0; border-radius:14px; pointer-events:none;
+    background:repeating-linear-gradient(180deg, rgba(255,230,190,0.045) 0 2px, rgba(0,0,0,0.05) 2px 6px);
+    mix-blend-mode:overlay; opacity:.5;
+  }
+  .cabinet-top{
+    text-align:center; font-family:'Caveat',cursive; color:#f0d6a8;
+    font-size:1.15rem; opacity:.65; margin-bottom:14px; letter-spacing:.5px;
+  }
+
+  .drawer{
+    position:relative; margin:11px 0; border-radius:9px; cursor:pointer;
+    background:linear-gradient(180deg,#6e4827,#4d301c 70%,#3a2414);
+    box-shadow:
+      0 1px 0 rgba(255,220,170,0.18) inset,
+      0 -2px 6px rgba(0,0,0,0.45) inset,
+      0 8px 16px -6px rgba(0,0,0,0.6);
+    padding:18px 16px; display:flex; align-items:center; gap:14px;
+    transition:transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s, filter .4s;
+    transform-style:preserve-3d;
+  }
+  .drawer::after{ /* drawer face grain */
+    content:''; position:absolute; inset:0; border-radius:9px; pointer-events:none;
+    background:repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 3px, rgba(255,220,170,0.03) 3px 7px);
+    opacity:.5;
+  }
+  .drawer:hover{ transform:translateZ(26px) translateY(-2px); box-shadow:0 1px 0 rgba(255,220,170,0.22) inset,0 18px 30px -8px rgba(0,0,0,0.7); }
+  .drawer:hover .knob{ box-shadow:0 0 14px rgba(255,200,120,0.6); }
+  .drawer.dimmed{ filter:brightness(.55) saturate(.7); transform:none; }
+  .drawer.pulled{ transform:translateZ(80px) translateY(-4px) scale(1.02); box-shadow:0 30px 50px -10px rgba(0,0,0,0.8); }
+
+  .knob{
+    flex:0 0 auto; width:14px; height:14px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--brass-1), var(--brass-2) 60%, var(--brass-dark));
+    box-shadow:0 1px 2px rgba(0,0,0,0.6); order:3; margin-left:auto;
+    transition:box-shadow .4s;
+  }
+  .plate{
+    flex:1; background:linear-gradient(180deg,var(--brass-1),var(--brass-2));
+    border-radius:5px; padding:7px 14px; text-align:center;
+    box-shadow:0 1px 2px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.3) inset;
+    border:1px solid rgba(90,68,24,0.5);
+  }
+  .plate span{
+    font-family:'Cormorant Garamond',serif; font-weight:600; font-size:1.12rem;
+    letter-spacing:.03em; color:#4a3410;
+    text-shadow:0 1px 0 rgba(255,255,255,0.25);
+  }
+  .glyph{ font-size:1.25rem; filter:saturate(.9); order:1; }
+
+  /* ── overlay ── */
+  .overlay{
+    position:fixed; inset:0; z-index:20; display:none;
+    align-items:center; justify-content:center; padding:24px;
+    background:radial-gradient(120% 100% at 50% 30%, rgba(40,28,14,0.6), rgba(0,0,0,0.88));
+    backdrop-filter:blur(3px);
+  }
+  .overlay.show{ display:flex; animation:fadeIn .5s ease both; }
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+
+  .stage{ position:relative; width:min(560px,94vw); }
+
+  /* envelope */
+  .envelope{
+    position:relative; width:min(360px,82vw); aspect-ratio:3/2; margin:0 auto;
+    cursor:pointer; animation:lift .8s cubic-bezier(.22,1,.36,1) both;
+    transition:opacity .4s, transform .5s;
+  }
+  @keyframes lift{from{opacity:0;transform:translateY(60px) scale(.9);}to{opacity:1;transform:none;}}
+  .env-body{
+    position:absolute; inset:0; border-radius:8px;
+    background:linear-gradient(160deg,#efe0c2,#e2cda3);
+    box-shadow:0 24px 50px -12px rgba(0,0,0,0.7), 0 1px 0 rgba(255,255,255,0.5) inset;
+  }
+  .env-body::before{ /* side flaps */
+    content:''; position:absolute; inset:0; border-radius:8px;
+    background:
+      linear-gradient(135deg, rgba(0,0,0,0.06) 0 49%, transparent 49%),
+      linear-gradient(225deg, rgba(0,0,0,0.06) 0 49%, transparent 49%);
+  }
+  .env-flap{
+    position:absolute; top:0; left:0; width:100%; height:62%;
+    clip-path:polygon(0 0,100% 0,50% 100%);
+    background:linear-gradient(180deg,#e8d4ab,#d8bf90);
+    transform-origin:top; transition:transform .7s cubic-bezier(.5,0,.2,1);
+    z-index:3; box-shadow:0 2px 6px rgba(0,0,0,0.15);
+  }
+  .seal{
+    position:absolute; top:46%; left:50%; transform:translate(-50%,-50%);
+    width:46px; height:46px; border-radius:50%; z-index:4;
+    background:radial-gradient(circle at 35% 30%,var(--rose),#b95d6b);
+    box-shadow:0 3px 8px rgba(0,0,0,0.4), 0 0 0 2px rgba(255,255,255,0.15) inset;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Caveat',cursive; color:#fff; font-size:1.4rem;
+    transition:opacity .4s, transform .5s;
+  }
+  .env-hint{
+    text-align:center; font-family:'Caveat',cursive; color:var(--lamp);
+    font-size:1.3rem; margin-top:18px; opacity:.85; animation:pulse 2.2s ease-in-out infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.5;}50%{opacity:.95;}}
+
+  .envelope.opening .env-flap{ transform:rotateX(180deg); }
+  .envelope.opening .seal{ opacity:0; transform:translate(-50%,-50%) scale(.4); }
+  .envelope.gone{ opacity:0; transform:translateY(-30px) scale(.96); pointer-events:none; }
+
+  /* the letter */
+  .letter{
+    position:relative; display:none; width:min(560px,94vw); max-height:84vh;
+    overflow-y:auto; border-radius:6px; padding:40px 34px 44px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.25), rgba(0,0,0,0.04)),
+      var(--paper);
+    color:var(--ink); box-shadow:0 30px 70px -15px rgba(0,0,0,0.8);
+    background-blend-mode:overlay,normal;
+  }
+  .letter.show{ display:block; animation:unfold .7s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes unfold{from{opacity:0;transform:translateY(30px) scale(.97);}to{opacity:1;transform:none;}}
+  .letter::before{ /* paper vignette + grain */
+    content:''; position:absolute; inset:0; border-radius:6px; pointer-events:none;
+    box-shadow:0 0 80px rgba(120,90,50,0.25) inset;
+    background:repeating-linear-gradient(0deg, rgba(120,90,50,0.025) 0 1px, transparent 1px 3px);
+  }
+  .letter h2{
+    font-family:'Caveat',cursive; font-weight:700; font-size:2.1rem;
+    color:#7a4b34; text-align:center; margin-bottom:8px;
+  }
+  .letter .rule{ width:60px; height:2px; margin:0 auto 22px; background:linear-gradient(90deg,transparent,var(--rose),transparent); }
+  .letter p{
+    font-family:'Caveat',cursive; font-size:1.4rem; line-height:1.65;
+    color:var(--ink); margin:0 0 14px; position:relative; z-index:1;
+  }
+  .signoff{ text-align:right; color:var(--ink-soft); font-style:italic; margin-top:18px; }
+
+  .photo-frame{
+    margin:18px auto 6px; width:78%; max-width:300px; padding:10px 10px 36px;
+    background:#fff; box-shadow:0 8px 20px -6px rgba(0,0,0,0.4); transform:rotate(-1.5deg);
+    position:relative; z-index:1;
+  }
+  .photo-frame img{ width:100%; display:block; border:1px solid #eee; }
+  .photo-frame figcaption{
+    font-family:'Caveat',cursive; text-align:center; color:#6f573d; font-size:1.1rem; margin-top:6px;
+  }
+
+  .voice{
+    margin:18px auto 4px; display:flex; align-items:center; gap:12px;
+    background:rgba(217,138,150,0.14); border:1px solid rgba(185,93,107,0.3);
+    border-radius:40px; padding:10px 18px; width:fit-content; position:relative; z-index:1;
+  }
+  .voice button{
+    border:none; cursor:pointer; width:40px; height:40px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,var(--rose),#b95d6b); color:#fff;
+    font-size:1rem; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 3px 8px rgba(0,0,0,0.3);
+  }
+  .voice .vlabel{ font-family:'Caveat',cursive; font-size:1.2rem; color:#8a4453; }
+
+  /* affirmation cards */
+  .affirm{ text-align:center; position:relative; z-index:1; }
+  .affirm .card{
+    font-family:'Caveat',cursive; font-size:1.7rem; color:#7a4b34; line-height:1.4;
+    min-height:90px; display:flex; align-items:center; justify-content:center;
+    padding:10px 6px;
+  }
+  .affirm .card.swap{ animation:cardSwap .5s ease both; }
+  @keyframes cardSwap{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+  .affirm .next{
+    margin-top:10px; font-family:'Cormorant Garamond',serif; font-style:italic;
+    background:none; border:1px solid rgba(185,93,107,0.4); color:#8a4453;
+    padding:7px 22px; border-radius:30px; cursor:pointer; font-size:1rem;
+    transition:background .3s;
+  }
+  .affirm .next:hover{ background:rgba(217,138,150,0.15); }
+  .affirm .dots{ margin-top:12px; display:flex; gap:6px; justify-content:center; }
+  .affirm .dots i{ width:7px;height:7px;border-radius:50%;background:rgba(185,93,107,0.3); transition:.3s; }
+  .affirm .dots i.on{ background:var(--rose); transform:scale(1.2); }
+
+  .close-x{
+    position:absolute; top:-14px; right:-6px; z-index:5;
+    width:38px; height:38px; border-radius:50%; cursor:pointer; border:none;
+    background:rgba(20,12,8,0.7); color:var(--paper); font-size:1.2rem;
+    box-shadow:0 3px 10px rgba(0,0,0,0.5); transition:transform .3s, background .3s;
+  }
+  .close-x:hover{ transform:rotate(90deg); background:rgba(185,93,107,0.6); }
+
+  /* per-drawer floating scene */
+  .scene{ position:fixed; inset:0; pointer-events:none; z-index:15; overflow:hidden; }
+  .float{ position:absolute; bottom:-40px; animation:floatUp linear forwards; opacity:0; }
+  @keyframes floatUp{
+    0%{opacity:0; transform:translateY(0) rotate(0);}
+    15%{opacity:.9;}
+    100%{opacity:0; transform:translateY(-112vh) rotate(40deg);}
+  }
+
+  /* music toggle */
+  .music{
+    position:fixed; bottom:20px; right:20px; z-index:30; cursor:pointer;
+    width:48px; height:48px; border-radius:50%; border:1px solid rgba(255,200,120,0.4);
+    background:rgba(30,20,12,0.7); color:var(--lamp); font-size:1.2rem;
+    display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);
+    box-shadow:0 4px 14px rgba(0,0,0,0.5); transition:transform .3s, box-shadow .3s;
+  }
+  .music:hover{ transform:scale(1.08); box-shadow:0 0 18px rgba(255,200,120,0.4); }
+  .music.on{ animation:spin 6s linear infinite; box-shadow:0 0 18px rgba(255,200,120,0.5); }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  footer{ z-index:2; color:#7a6244; font-family:'Caveat',cursive; font-size:1.1rem; opacity:.5; margin-bottom:26px; }
+
+  ::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:rgba(120,80,40,0.4);border-radius:8px;}
+</style>
+</head>
+<body>
+
+  <div class="lamp"></div>
+  <div class="motes" id="motes"></div>
+
+  <header>
+    <div class="for-who">for Isha</div>
+    <h1>Open When…</h1>
+    <div class="sub">a little drawer for whenever you need it</div>
+  </header>
+
+  <div class="cabinet-wrap">
+    <div class="cabinet">
+      <div class="cabinet-top">~ pull a drawer ~</div>
+      <div id="drawers"></div>
+    </div>
+  </div>
+
+  <footer>made with all of me ♡</footer>
+
+  <!-- overlay -->
+  <div class="overlay" id="overlay">
+    <div class="stage">
+      <button class="close-x" id="closeBtn" aria-label="close">✕</button>
+
+      <div class="envelope" id="envelope">
+        <div class="env-body"></div>
+        <div class="seal">♡</div>
+        <div class="env-flap"></div>
+      </div>
+      <div class="env-hint" id="envHint">tap to open</div>
+
+      <div class="letter" id="letter"></div>
+    </div>
+  </div>
+
+  <div class="scene" id="scene"></div>
+
+  <button class="music" id="musicBtn" title="soft music">♪</button>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   1.  MUSIC — leave '' to use the built-in gentle piano,
+       or set a path to your own file e.g. "our-song.mp3"
+   ════════════════════════════════════════════════════════════════ */
+const MUSIC_FILE = '';
+
+/* ════════════════════════════════════════════════════════════════
+   2.  THE DRAWERS — this is the heart of it. Edit freely. ♡
+       scene options: 'hearts' | 'stars' | 'glow' | 'petals' | 'affirm'
+   ════════════════════════════════════════════════════════════════ */
+const DRAWERS = [
+  {
+    label:"Open when you're sad",
+    glyph:"🌧️",
+    scene:"glow",
+    heading:"Hey you,",
+    lines:[
+      "If you're reading this, it means today felt heavy — and I want you to know the weight you're carrying isn't yours to carry alone.",
+      "You don't have to be okay right now. You don't have to explain it or fix it. Just breathe. I've got the rest.",
+      "Whatever made today hard, it doesn't get to decide who you are. You are still the warmest, brightest person I know.",
+      "Close your eyes for a second and imagine me sitting right next to you, not saying anything, just here. Because I am."
+    ],
+    signoff:"— always in your corner",
+    voice:"",   // e.g. "voice/sad.mp3"
+    photo:""    // e.g. "photos/us.jpg"
+  },
+  {
+    label:"Open when you miss me",
+    glyph:"💌",
+    scene:"hearts",
+    heading:"I miss you too.",
+    lines:[
+      "I know. The distance does that thing where it folds the hours and makes them longer.",
+      "But here's a secret: I think about you in the small moments — the first sip of chai, a song that sounds like you, the quiet right before sleep.",
+      "You're not far. You're just a thought away, and right now you're the loudest one I've got.",
+      "Soon, okay? Until then, take this letter as a hug you can re-open as many times as you need."
+    ],
+    signoff:"— counting down to you",
+    voice:"",
+    photo:""    // a photo of the two of you lands beautifully here
+  },
+  {
+    label:"Open when you can't sleep",
+    glyph:"🌙",
+    scene:"stars",
+    heading:"Shh… it's late.",
+    lines:[
+      "Your mind is doing that thing again, isn't it? Replaying, planning, worrying. Let it go for now — none of it needs you tonight.",
+      "Unclench your jaw. Drop your shoulders. Let the bed hold you.",
+      "Picture a slow, quiet place: warm light, soft rain on the window, nowhere to be. I'm there, and you're safe.",
+      "Breathe in for four… hold… out for six. Again. The world will still be here in the morning, and so will I."
+    ],
+    signoff:"— goodnight, my favourite person",
+    voice:"",   // a whispered voice note works wonders here
+    photo:""
+  },
+  {
+    label:"Open when you doubt yourself",
+    glyph:"✨",
+    scene:"affirm",
+    heading:"Read this slowly.",
+    lines:[],   // this drawer uses the affirmations below instead of a letter
+    affirmations:[
+      "You are far more capable than the voice in your head is telling you right now.",
+      "Every hard thing you've ever faced — you're still here. That's a 100% survival record.",
+      "You don't have to be sure of yourself. You just have to take one more step. I'll be proud either way.",
+      "The people who love you aren't waiting for you to be perfect. We're already amazed by you.",
+      "You are not behind. You are not too much. You are exactly enough, today and always."
+    ],
+    signoff:"",
+    voice:"",
+    photo:""
+  },
+  {
+    label:"Open when you want love",
+    glyph:"❤️",
+    scene:"petals",
+    heading:"Then take all of it.",
+    lines:[
+      "Here it is, no rationing, no asking — all the love you could possibly want, in one little drawer.",
+      "I love the way you laugh before the joke is even finished. I love how you care about things deeply. I love your sleepy voice and your stubborn heart.",
+      "You don't ever have to earn this. It's already yours and it isn't going anywhere.",
+      "(Tap the screen below — every tap is a little kiss, sent.)"
+    ],
+    signoff:"— yours, completely",
+    voice:"",
+    photo:"",
+    kisses:true   // enables the tap-for-kisses moment
+  }
+];
+
+/* ════════════════════════════════════════════════════════════════
+   3.  ENGINE — no need to edit below unless you're tinkering.
+   ════════════════════════════════════════════════════════════════ */
+const overlay = document.getElementById('overlay');
+const envelope = document.getElementById('envelope');
+const envHint  = document.getElementById('envHint');
+const letterEl = document.getElementById('letter');
+const sceneEl  = document.getElementById('scene');
+const closeBtn = document.getElementById('closeBtn');
+let current = null, sceneTimer = null, audioEl = null;
+
+/* dust motes */
+const motes = document.getElementById('motes');
+for(let i=0;i<26;i++){
+  const m=document.createElement('div'); m.className='mote';
+  m.style.left=(Math.random()*100)+'%';
+  m.style.animationDuration=(9+Math.random()*12)+'s';
+  m.style.animationDelay=(-Math.random()*15)+'s';
+  m.style.opacity=Math.random()*0.6+0.2;
+  motes.appendChild(m);
+}
+
+/* build drawers */
+const wrap = document.getElementById('drawers');
+DRAWERS.forEach((d,i)=>{
+  const el=document.createElement('div');
+  el.className='drawer';
+  el.innerHTML=`<span class="glyph">${d.glyph}</span><div class="plate"><span>${d.label}</span></div><span class="knob"></span>`;
+  el.addEventListener('click',()=>openDrawer(i,el));
+  wrap.appendChild(el);
+});
+
+function openDrawer(i,el){
+  current=i;
+  document.querySelectorAll('.drawer').forEach(d=>{ if(d!==el) d.classList.add('dimmed'); });
+  el.classList.add('pulled');
+
+  // reset overlay state
+  envelope.className='envelope';
+  envHint.style.display='block';
+  letterEl.className='letter';
+  letterEl.innerHTML='';
+  document.querySelector('.seal').textContent = DRAWERS[i].glyph;
+
+  setTimeout(()=>overlay.classList.add('show'),180);
+}
+
+envelope.addEventListener('click',()=>{
+  if(envelope.classList.contains('opening')) return;
+  envelope.classList.add('opening');
+  envHint.style.display='none';
+  setTimeout(()=>{ envelope.classList.add('gone'); buildLetter(current); },680);
+});
+
+function buildLetter(i){
+  const d=DRAWERS[i];
+  let html=`<h2>${d.heading}</h2><div class="rule"></div>`;
+
+  if(d.scene==='affirm' && d.affirmations){
+    html+=`<div class="affirm" id="affirmBox"></div>`;
+  } else {
+    d.lines.forEach(p=> html+=`<p>${p}</p>`);
+  }
+  if(d.photo){
+    html+=`<figure class="photo-frame"><img src="${d.photo}" alt="us"><figcaption>us ♡</figcaption></figure>`;
+  }
+  if(d.voice){
+    html+=`<div class="voice"><button id="vbtn">▶</button><span class="vlabel">a little voice note ♡</span>
+           <audio id="vaudio" src="${d.voice}"></audio></div>`;
+  }
+  if(d.signoff){ html+=`<p class="signoff">${d.signoff}</p>`; }
+
+  letterEl.innerHTML=html;
+  letterEl.classList.add('show');
+  letterEl.scrollTop=0;
+
+  if(d.scene==='affirm' && d.affirmations) initAffirm(d.affirmations);
+  if(d.voice) initVoice();
+  if(d.kisses) letterEl.addEventListener('click',kissBurst);
+
+  startScene(d.scene);
+}
+
+function initVoice(){
+  const btn=document.getElementById('vbtn'), au=document.getElementById('vaudio');
+  btn.addEventListener('click',()=>{
+    if(au.paused){ au.play().then(()=>btn.textContent='❚❚').catch(()=>{ btn.textContent='—'; }); }
+    else{ au.pause(); btn.textContent='▶'; }
+  });
+  au.addEventListener('ended',()=>btn.textContent='▶');
+}
+
+function initAffirm(list){
+  const box=document.getElementById('affirmBox');
+  let idx=0;
+  const dots=list.map(()=>'<i></i>').join('');
+  box.innerHTML=`<div class="card" id="aCard"></div>
+    <button class="next" id="aNext">next →</button>
+    <div class="dots" id="aDots">${dots}</div>`;
+  const card=document.getElementById('aCard');
+  const next=document.getElementById('aNext');
+  const dotEls=[...document.querySelectorAll('#aDots i')];
+  const render=()=>{
+    card.classList.remove('swap'); void card.offsetWidth; card.classList.add('swap');
+    card.textContent='“'+list[idx]+'”';
+    dotEls.forEach((d,j)=>d.classList.toggle('on',j===idx));
+    next.textContent = idx===list.length-1 ? 'again ↺' : 'next →';
+  };
+  next.addEventListener('click',()=>{ idx=(idx+1)%list.length; render(); });
+  render();
+}
+
+/* floating scenes */
+const SCENE_GLYPH={hearts:['♡','💗','💕'],stars:['✦','✧','⋆','✩'],glow:['✺','❉','✷'],petals:['🌸','🌷','❀']};
+function startScene(type){
+  stopScene();
+  if(type==='affirm') return;
+  const glyphs=SCENE_GLYPH[type]||['♡'];
+  const colors={hearts:'#d98a96',stars:'#ffe7a8',glow:'#ffca7a',petals:'#f3b6c2'};
+  sceneTimer=setInterval(()=>{
+    const f=document.createElement('div'); f.className='float';
+    f.textContent=glyphs[Math.floor(Math.random()*glyphs.length)];
+    f.style.left=(Math.random()*100)+'%';
+    f.style.fontSize=(14+Math.random()*22)+'px';
+    f.style.color=colors[type]||'#d98a96';
+    f.style.animationDuration=(7+Math.random()*6)+'s';
+    sceneEl.appendChild(f);
+    setTimeout(()=>f.remove(),13000);
+  },420);
+}
+function stopScene(){ clearInterval(sceneTimer); sceneEl.innerHTML=''; }
+
+function kissBurst(e){
+  for(let k=0;k<3;k++){
+    const f=document.createElement('div'); f.className='float'; f.textContent='💋';
+    f.style.left=(40+Math.random()*20)+'%';
+    f.style.bottom='auto'; f.style.top=(e.clientY||window.innerHeight/2)+'px';
+    f.style.fontSize=(16+Math.random()*16)+'px';
+    f.style.animationDuration=(2.5+Math.random()*1.5)+'s';
+    sceneEl.appendChild(f);
+    setTimeout(()=>f.remove(),4000);
+  }
+}
+
+/* close */
+function closeAll(){
+  overlay.classList.remove('show');
+  stopScene();
+  document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('dimmed','pulled'));
+  letterEl.removeEventListener('click',kissBurst);
+  current=null;
+}
+closeBtn.addEventListener('click',closeAll);
+overlay.addEventListener('click',e=>{ if(e.target===overlay) closeAll(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
+
+/* ── music: your file, or a soft generative piano ── */
+const musicBtn=document.getElementById('musicBtn');
+let playing=false, actx=null, genTimer=null, master=null;
+const SCALE=[261.63,293.66,329.63,392.00,440.00,523.25,587.33,659.25]; // C major pentatonic-ish, two octaves
+
+function startGenerative(){
+  actx=new (window.AudioContext||window.webkitAudioContext)();
+  master=actx.createGain(); master.gain.value=0.0; master.connect(actx.destination);
+  master.gain.linearRampToValueAtTime(0.16, actx.currentTime+2);
+  const delay=actx.createDelay(); delay.delayTime.value=0.34;
+  const fb=actx.createGain(); fb.gain.value=0.32;
+  const lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1700;
+  delay.connect(fb); fb.connect(delay); delay.connect(lp); lp.connect(master);
+  const note=(freq,t)=>{
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type='triangle'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.5,t+0.4);
+    g.gain.exponentialRampToValueAtTime(0.001,t+3.2);
+    o.connect(g); g.connect(master); g.connect(delay);
+    o.start(t); o.stop(t+3.4);
+  };
+  const loop=()=>{
+    const t=actx.currentTime+0.05;
+    note(SCALE[Math.floor(Math.random()*SCALE.length)],t);
+    if(Math.random()<0.4) note(SCALE[Math.floor(Math.random()*SCALE.length)],t+0.18);
+    genTimer=setTimeout(loop, 1700+Math.random()*1700);
+  };
+  loop();
+}
+function stopGenerative(){ clearTimeout(genTimer); if(master)master.gain.linearRampToValueAtTime(0,actx.currentTime+1); }
+
+musicBtn.addEventListener('click',()=>{
+  playing=!playing;
+  musicBtn.classList.toggle('on',playing);
+  if(MUSIC_FILE){
+    if(!audioEl){ audioEl=new Audio(MUSIC_FILE); audioEl.loop=true; audioEl.volume=0.5; }
+    if(playing) audioEl.play().catch(()=>{}); else audioEl.pause();
+  } else {
+    if(playing){ if(!actx) startGenerative(); else { actx.resume(); master.gain.linearRampToValueAtTime(0.16,actx.currentTime+1.5); } }
+    else stopGenerative();
+  }
+});
+</script>
+</body>
+</html>
