@@ -587,6 +587,7 @@ function openDrawer(i,el){
 
   // reset overlay state
   envelope.className='envelope';
+  envelope.style.display='';
   envHint.style.display='block';
   letterEl.className='letter';
   letterEl.innerHTML='';
@@ -621,6 +622,11 @@ function buildLetter(i){
   if(d.signoff){ html+=`<p class="signoff">${d.signoff}</p>`; }
 
   html+=`<button class="back-btn" id="backBtn">← back to the drawers</button>`;
+
+  // remove the opened envelope from the layout so it no longer
+  // reserves space (which was pushing the letter down and the ✕ off-screen)
+  envelope.style.display='none';
+  envHint.style.display='none';
 
   letterEl.innerHTML=html;
   letterEl.classList.add('show');
