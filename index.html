@@ -64,7 +64,11 @@
     flex-direction:column;
     align-items:center;
     position:relative;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-text-size-adjust:100%; text-size-adjust:100%;
   }
+  /* lock the page behind the open letter so the background doesn't scroll on touch */
+  body.locked{ overflow:hidden; position:fixed; width:100%; }
 
   /* warm lamp orb up top */
   .lamp{
@@ -154,14 +158,19 @@
     padding:18px 16px; display:flex; align-items:center; gap:14px;
     transition:transform .5s cubic-bezier(.22,1,.36,1), box-shadow .5s, filter .4s;
     transform-style:preserve-3d;
+    touch-action:manipulation; -webkit-user-select:none; user-select:none;
   }
   .drawer::after{ /* drawer face grain */
     content:''; position:absolute; inset:0; border-radius:9px; pointer-events:none;
     background:repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0 3px, rgba(255,220,170,0.03) 3px 7px);
     opacity:.5;
   }
-  .drawer:hover{ transform:translateZ(26px) translateY(-2px); box-shadow:0 1px 0 rgba(255,220,170,0.22) inset,0 18px 30px -8px rgba(0,0,0,0.7); }
-  .drawer:hover .knob{ box-shadow:0 0 14px rgba(255,200,120,0.6); }
+  @media (hover:hover){
+    .drawer:hover{ transform:translateZ(26px) translateY(-2px); box-shadow:0 1px 0 rgba(255,220,170,0.22) inset,0 18px 30px -8px rgba(0,0,0,0.7); }
+    .drawer:hover .knob{ box-shadow:0 0 14px rgba(255,200,120,0.6); }
+  }
+  /* touch feedback that releases cleanly after the tap */
+  .drawer:active{ transform:translateY(-1px); filter:brightness(1.08); }
   .drawer.dimmed{ filter:brightness(.55) saturate(.7); transform:none; }
   .drawer.pulled{ transform:translateZ(80px) translateY(-4px) scale(1.02); box-shadow:0 30px 50px -10px rgba(0,0,0,0.8); }
 
@@ -242,8 +251,9 @@
 
   /* the letter */
   .letter{
-    position:relative; display:none; width:min(560px,94vw); max-height:84vh;
-    overflow-y:auto; border-radius:6px; padding:40px 34px 44px;
+    position:relative; display:none; width:min(560px,94vw); max-height:84vh; max-height:84dvh;
+    overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    border-radius:6px; padding:40px 34px 44px;
     background:
       linear-gradient(180deg, rgba(255,255,255,0.25), rgba(0,0,0,0.04)),
       var(--paper);
@@ -343,6 +353,42 @@
   footer{ z-index:2; color:#7a6244; font-family:'Caveat',cursive; font-size:1.1rem; opacity:.5; margin-bottom:26px; }
 
   ::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:rgba(120,80,40,0.4);border-radius:8px;}
+
+  /* ── mobile / touch tuning ── */
+  @media (max-width:600px){
+    header{ margin-top:36px; }
+    .for-who{ font-size:1.35rem; }
+    .sub{ font-size:1rem; }
+    .cabinet-wrap{ margin:30px 0 64px; perspective:none; }   /* drop 3D perspective — it's heavy and adds little on a phone */
+    .cabinet{ transform:none; padding:16px 12px 18px; }       /* un-tilt so drawers sit flat and readable */
+    .drawer{ padding:16px 14px; margin:10px 0; }
+    .plate{ padding:7px 10px; }
+    .plate span{ font-size:1.04rem; }
+
+    .overlay{ padding:14px; backdrop-filter:none; -webkit-backdrop-filter:none; }  /* animated blur is the main source of jank */
+    .letter{ padding:30px 22px 34px; }
+    .letter h2{ font-size:1.9rem; }
+    .letter p{ font-size:1.3rem; }
+
+    /* bigger, easier-to-hit touch targets */
+    .close-x{ width:42px; height:42px; top:-10px; right:-2px; }
+    .music{ width:52px; height:52px; bottom:16px; right:16px; }
+
+    /* the big animated lamp blur is expensive on mobile GPUs */
+    .lamp{ width:240px; height:240px; filter:none; }
+  }
+
+  /* let pulled drawers stay flat when 3D is disabled on small screens */
+  @media (max-width:600px){
+    .drawer.pulled{ transform:translateY(-3px) scale(1.02); }
+    .drawer:active{ transform:scale(.99); }
+  }
+
+  /* respect users who don't want motion */
+  @media (prefers-reduced-motion:reduce){
+    *{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.05ms !important; }
+    .lamp,.motes{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -488,9 +534,23 @@ const sceneEl  = document.getElementById('scene');
 const closeBtn = document.getElementById('closeBtn');
 let current = null, sceneTimer = null, audioEl = null;
 
-/* dust motes */
+/* scroll lock helpers — keep the page still behind the open letter on touch */
+let savedScroll = 0;
+function lockScroll(){
+  savedScroll = window.scrollY || window.pageYOffset || 0;
+  document.body.style.top = (-savedScroll) + 'px';
+  document.body.classList.add('locked');
+}
+function unlockScroll(){
+  document.body.classList.remove('locked');
+  document.body.style.top = '';
+  window.scrollTo(0, savedScroll);
+}
+
+/* dust motes — fewer on small / low-power screens to keep things smooth */
 const motes = document.getElementById('motes');
-for(let i=0;i<26;i++){
+const MOTE_COUNT = window.innerWidth < 600 ? 12 : 26;
+for(let i=0;i<MOTE_COUNT;i++){
   const m=document.createElement('div'); m.className='mote';
   m.style.left=(Math.random()*100)+'%';
   m.style.animationDuration=(9+Math.random()*12)+'s';
@@ -521,7 +581,7 @@ function openDrawer(i,el){
   letterEl.innerHTML='';
   document.querySelector('.seal').textContent = DRAWERS[i].glyph;
 
-  setTimeout(()=>overlay.classList.add('show'),180);
+  setTimeout(()=>{ overlay.classList.add('show'); lockScroll(); },180);
 }
 
 envelope.addEventListener('click',()=>{
@@ -596,6 +656,7 @@ function startScene(type){
   if(type==='affirm') return;
   const glyphs=SCENE_GLYPH[type]||['♡'];
   const colors={hearts:'#d98a96',stars:'#ffe7a8',glow:'#ffca7a',petals:'#f3b6c2'};
+  const spawnEvery = window.innerWidth < 600 ? 720 : 420;   // lighter particle load on mobile
   sceneTimer=setInterval(()=>{
     const f=document.createElement('div'); f.className='float';
     f.textContent=glyphs[Math.floor(Math.random()*glyphs.length)];
@@ -605,7 +666,7 @@ function startScene(type){
     f.style.animationDuration=(7+Math.random()*6)+'s';
     sceneEl.appendChild(f);
     setTimeout(()=>f.remove(),13000);
-  },420);
+  },spawnEvery);
 }
 function stopScene(){ clearInterval(sceneTimer); sceneEl.innerHTML=''; }
 
@@ -624,6 +685,7 @@ function kissBurst(e){
 /* close */
 function closeAll(){
   overlay.classList.remove('show');
+  unlockScroll();
   stopScene();
   document.querySelectorAll('.drawer').forEach(d=>d.classList.remove('dimmed','pulled'));
   letterEl.removeEventListener('click',kissBurst);
