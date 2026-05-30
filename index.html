@@ -321,6 +321,17 @@
   .affirm .dots i{ width:7px;height:7px;border-radius:50%;background:rgba(185,93,107,0.3); transition:.3s; }
   .affirm .dots i.on{ background:var(--rose); transform:scale(1.2); }
 
+  /* back-to-drawers button at the foot of the letter */
+  .back-btn{
+    display:block; margin:26px auto 4px; cursor:pointer;
+    font-family:'Cormorant Garamond',serif; font-style:italic; font-size:1.05rem;
+    color:#8a4453; background:none; border:1px solid rgba(185,93,107,0.45);
+    padding:9px 26px; border-radius:30px; position:relative; z-index:1;
+    transition:background .3s, transform .3s; -webkit-tap-highlight-color:transparent;
+  }
+  .back-btn:hover{ background:rgba(217,138,150,0.15); }
+  .back-btn:active{ transform:scale(.97); }
+
   .close-x{
     position:absolute; top:-14px; right:-6px; z-index:5;
     width:38px; height:38px; border-radius:50%; cursor:pointer; border:none;
@@ -609,9 +620,13 @@ function buildLetter(i){
   }
   if(d.signoff){ html+=`<p class="signoff">${d.signoff}</p>`; }
 
+  html+=`<button class="back-btn" id="backBtn">← back to the drawers</button>`;
+
   letterEl.innerHTML=html;
   letterEl.classList.add('show');
   letterEl.scrollTop=0;
+
+  document.getElementById('backBtn').addEventListener('click',e=>{ e.stopPropagation(); closeAll(); });
 
   if(d.scene==='affirm' && d.affirmations) initAffirm(d.affirmations);
   if(d.voice) initVoice();
